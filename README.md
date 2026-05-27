@@ -142,9 +142,6 @@ This public repository is organized to include code, aggregate summary results, 
 │   ├── evaluate_retrieval_followup.py
 │   ├── evaluate_agreement_disagreement.py
 │   └── run_grouped_frozen_classifier_and_retrieval.py
-├── qsub/
-│   ├── run_frozen_validation_gpu.sh
-│   └── run_mean_embeddings_gpu.sh
 ├── results_summary/
 │   ├── frozen_validation_metrics_comprehensive.csv
 │   ├── retrieval_vs_classifier_by_antibiotic.csv
@@ -152,7 +149,10 @@ This public repository is organized to include code, aggregate summary results, 
 │   ├── rank_position_true_label_analysis.csv
 │   ├── neighborhood_similarity_analysis.csv
 │   ├── combined_score_weight_sweep.csv
-│   └── agreement_disagreement_summary.csv
+│   ├── agreement_disagreement_summary.csv
+│   └── qsub/
+│       ├── run_frozen_validation_gpu.sh
+│       └── run_mean_embeddings_gpu.sh
 ├── figures/
 └── paper/
 ```
