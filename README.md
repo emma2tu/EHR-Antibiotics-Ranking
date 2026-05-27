@@ -310,9 +310,7 @@ This project has several important limitations:
 
 ## AI Tool Use Disclosure
 
-AI tools were used to support code development, debugging, interpretation, and writing organization. ChatGPT and Claude Code helped with pipeline design, troubleshooting Python scripts, interpreting output files, and drafting explanations of methods and results.
-
-All analyses were run using project Python scripts, and all final results were reviewed by the author.
+ChatGPT and Claude Code were used to support code development, debugging, and writing organization. All final results were reviewed by the authors.
 
 ---
 
