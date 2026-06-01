@@ -1,29 +1,8 @@
-# Retrieval-Augmented Antibiotic Ranking from Clinical Narratives
+# Using Similar-Patient Retrieval to Rank Antibiotic Susceptibility 
 
-This repository contains code and aggregate results for a project exploring **retrieval-augmented antibiotic ranking** from electronic health record (EHR)-derived clinical narratives.
+This repository contains code and aggregate results for a project exploring **retrieval-augmented antibiotic ranking** from electronic health record (EHR)-derived clinical narratives. The project builds on Lee et. al's work on predicting antibiotic effectiveness using biomedical language models. 
 
-The project builds on the idea that biomedical language model embeddings can represent patient clinical context. A supervised classifier predicts antibiotic effectiveness probabilities, while a retrieval module finds similar historical patients and uses their observed antibiotic labels to provide an interpretable, case-based ranking.
-
-The main goal is not to replace clinical judgment or antimicrobial susceptibility testing, but to explore how similar-patient retrieval can improve **interpretability, provenance, and physician trust** in antibiotic prediction models.
-
----
-
-## Project Overview
-
-The pipeline has two main components:
-
-### 1. Frozen BioClinicalBERT + LightGBM Classifier
-
-Each patient narrative is encoded using BioClinicalBERT. The transformer model is used as a **frozen feature extractor**, meaning BioClinicalBERT weights are not fine-tuned. The resulting patient embeddings are used to train one LightGBM binary classifier per antibiotic.
-
-For each test patient, the classifier outputs a predicted probability for each antibiotic:
-
-```text
-patient_paragraph
-→ BioClinicalBERT embedding
-→ LightGBM classifiers
-→ antibiotic probabilities
-```
+The main goal is not to replace clinical judgment or antimicrobial susceptibility testing, but to explore how similar-patient retrieval can improve interpretability, provenance, and physician trust in antibiotic prediction models.
 
 The eight antibiotics evaluated are:
 
@@ -36,20 +15,35 @@ The eight antibiotics evaluated are:
 * Trimethoprim/Sulfa
 * Vancomycin
 
+---
+
+## Project Overview
+
+The pipeline has two main components:
+
+### 1. Frozen BioClinicalBERT + LightGBM Classifier (Recreating Lee et. al's work)
+
+Each patient narrative is encoded using BioClinicalBERT. The transformer model is used as a **frozen feature extractor**, meaning BioClinicalBERT weights are not fine-tuned. The resulting patient embeddings are used to train one LightGBM binary classifier per antibiotic.
+
+For each test patient, the classifier outputs a predicted probability for each antibiotic:
+
+For each patient, there is:
+* BioClinicalBERT embedding
+* LightGBM classifiers
+* antibiotic probabilities
+
 ### 2. Similar-Patient Retrieval Ranking
 
 The retrieval system uses BioClinicalBERT embeddings to identify the top-k most similar historical patients for each test patient. Antibiotics are then ranked based on how often each antibiotic was labeled effective among those retrieved neighbors.
 
-```text
-query patient embedding
-→ cosine similarity against training patient embeddings
-→ top-10 similar patients
-→ count neighbor antibiotic labels
-→ retrieval-based antibiotic ranking
-```
+
+For each patient, we find:
+* cosine similarity against training patient embeddings
+* top-10 similar patients
+* count neighbor antibiotic labels
+* retrieval-based antibiotic ranking
 
 For each antibiotic, retrieval produces:
-
 * `retrieval_count`: number of top-10 neighbors with positive label
 * `retrieval_fraction`: retrieval_count / 10
 * `retrieval_weighted_score`: similarity-weighted neighbor evidence
@@ -61,8 +55,6 @@ The retrieval layer is intended to provide a clinician-facing explanation such a
 ---
 
 ## Key Results
-
-The main reported results use the row-level train/test split consistent with the original benchmark-style workflow.
 
 ### Classifier Performance
 
@@ -123,5 +115,5 @@ When the classifier and retrieval system agreed on the top antibiotic, the top r
 | Agreement cases    |      349 |               0.946 |                0.946 |
 | Disagreement cases |      250 |               0.852 |                0.976 |
 
-These results suggest a practical design: use the classifier as the primary prediction engine, and use retrieval as an interpretable support layer that provides similar-patient provenance.
+These results suggest that retrieval could be used as an interpretable support layer for patient antibiotic susceptibility prediction.
 
