@@ -1,8 +1,10 @@
 # Using Similar-Patient Retrieval to Rank Antibiotic Susceptibility 
 
-This repository contains code and aggregate results for a project exploring **retrieval-augmented antibiotic ranking** from electronic health record (EHR)-derived clinical narratives. The project builds on Lee et. al's work on predicting antibiotic effectiveness using biomedical language models. 
-
-The main goal is not to replace clinical judgment or antimicrobial susceptibility testing, but to explore how similar-patient retrieval can improve interpretability, provenance, and physician trust in antibiotic prediction models.
+**Abstract**
+**Introduction:** Antibiotic selection in the Emergency Department is time-sensitive. Researchers are able to build machine learning models to predict the right antibiotics using Electronic Health Records (EHR). However, current machine learning model predictions of selecting antibiotics can be difficult for clinicians to interpret. This project evaluated whether similar-patient retrieval can provide interpretable support through antibiotic ranking.  
+**Method:** Using a cohort of 4,185 patients with Staphylococcus aureus infections from the MIMIC IV dataset, patient features were first converted into clinical narratives and embedded with frozen BioClinicalBERT. A LightGBM classifier was trained separately for each of eight antibiotics to predict susceptibility, and classifier probabilities were sorted to generate antibiotic rankings. In addition, a retrieval method identified the ten most similar training patients for each test patient using cosine similarity over BioClinicalBERT embeddings, then ranked antibiotics based on neighbor susceptibility.  
+**Results:** The supervised BioClinicalBERT + LightGBM classifier achieved the strongest overall predictive performance, with a mean AUROC of 0.731 and mean AUPRC of 0.829 across antibiotics. Retrieval-only methods had lower AUROC/AUPRC, but produced clinically meaningful rankings, where the top ranked antibiotic was truly effective in 90.7% of test cases. 
+**Discussion:** These results suggest that retrieval should not replace the classifier approach for antibiotic susceptibility prediction, but can serve as an interpretable layer by showing similar historical patients whose outcomes support the recommendation.
 
 The eight antibiotics evaluated are:
 
