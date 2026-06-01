@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 """
 Frozen BioClinicalBERT + LightGBM validation with patient-level predictions.
 
@@ -26,6 +27,11 @@ High-level workflow
 Run from the repository root:
     python run_frozen_validation_with_predictions.py
 """
+=======
+# Frozen BioClinicalBERT + LightGBM validation with patient-level predictions.
+# Treats each antibiotic as a separate binary classification task.
+# BioClinicalBERT weights are frozen — no fine-tuning, just embedding extraction.
+>>>>>>> ba4863a (update)
 
 from __future__ import annotations
 
@@ -49,6 +55,7 @@ from tqdm.auto import tqdm
 from transformers import AutoModel, AutoTokenizer
 
 
+<<<<<<< HEAD
 # =============================================================================
 # Paths
 # =============================================================================
@@ -81,6 +88,26 @@ MODEL_NAME = "emilyalsentzer/Bio_ClinicalBERT"
 
 # Each antibiotic is modeled as its own binary classification task. For example,
 # the CLINDAMYCIN classifier predicts CLINDAMYCIN_true from the text embedding.
+=======
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+BASE = Path(__file__).parent
+
+DATA_PATH = BASE / "data" / "antibiotics_labels.csv"
+CACHE_DIR = BASE / "cache"
+OUTPUT_DIR = BASE / "outputs"
+
+# Row order must match the cleaned dataframe after dropna() + reset_index().
+EMB_NPY = CACHE_DIR / "patient_paragraph_bioclinicalbert_embeddings.npy"
+
+
+# ---------------------------------------------------------------------------
+# Experiment settings
+# ---------------------------------------------------------------------------
+MODEL_NAME = "emilyalsentzer/Bio_ClinicalBERT"
+
+>>>>>>> ba4863a (update)
 ANTIBIOTICS = [
     "CLINDAMYCIN",
     "ERYTHROMYCIN",
@@ -92,6 +119,7 @@ ANTIBIOTICS = [
     "VANCOMYCIN",
 ]
 
+<<<<<<< HEAD
 # Column containing the already-constructed patient narrative / EHR text block.
 TEXT_COL = "patient_paragraph"
 
@@ -125,6 +153,26 @@ ENCODE_BATCH_SIZE = 32
 SAVE_EVERY = 512
 
 # LightGBM hyperparameters shared by all antibiotic-specific classifiers.
+=======
+TEXT_COL = "patient_paragraph"
+
+# Copied into the prediction CSV so results can be traced back to patients.
+ID_COLS = ["subject_id", "hadm_id", "stay_id"]
+
+TEST_SIZE = 0.10
+VAL_SIZE  = 0.10
+RANDOM_STATE = 42
+
+# Bootstraps for approximate 95% CIs on AUROC, AUPRC, F1.
+N_BOOTSTRAPS = 200
+
+# "cls" uses the [CLS] token; "mean" averages non-padding tokens.
+POOLING = "cls"
+
+ENCODE_BATCH_SIZE = 32
+SAVE_EVERY = 512  # checkpoint interval (rows) during embedding
+
+>>>>>>> ba4863a (update)
 LGBM_PARAMS = dict(
     n_estimators=1000,
     learning_rate=0.05,
@@ -135,6 +183,7 @@ LGBM_PARAMS = dict(
 )
 
 
+<<<<<<< HEAD
 # =============================================================================
 # BioClinicalBERT embedding helpers
 # =============================================================================
@@ -158,6 +207,16 @@ def mean_pool(last_hidden_state: torch.Tensor, attention_mask: torch.Tensor) -> 
     # zero in unusual cases where a sequence has no valid tokens.
     denom = torch.clamp(mask.sum(dim=1), min=1e-9)
 
+=======
+# ---------------------------------------------------------------------------
+# BioClinicalBERT embedding helpers
+# ---------------------------------------------------------------------------
+def mean_pool(last_hidden_state: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:
+    # Average token embeddings, ignoring padding tokens.
+    mask = attention_mask.unsqueeze(-1).expand(last_hidden_state.size()).float()
+    summed = torch.sum(last_hidden_state * mask, dim=1)
+    denom = torch.clamp(mask.sum(dim=1), min=1e-9)
+>>>>>>> ba4863a (update)
     return summed / denom
 
 
@@ -170,6 +229,7 @@ def encode_texts(
     pooling: str = "cls",
     force_restart: bool = False,
 ) -> np.ndarray:
+<<<<<<< HEAD
     """Generate frozen BioClinicalBERT embeddings for a list of texts.
 
     Parameters
@@ -195,6 +255,10 @@ def encode_texts(
         Embedding matrix with shape [number_of_texts, hidden_size].
         For BioClinicalBERT, hidden_size is 768.
     """
+=======
+    # Returns embedding matrix [n_texts, hidden_size].
+    # Resumes from disk if a partial cache exists.
+>>>>>>> ba4863a (update)
 
     if pooling not in {"cls", "mean"}:
         raise ValueError("pooling must be either 'cls' or 'mean'")
@@ -202,6 +266,7 @@ def encode_texts(
     embeddings: list[np.ndarray] = []
     start_idx = 0
 
+<<<<<<< HEAD
     # If a cache already exists, either load it completely or resume from the
     # number of rows already saved. This is especially useful because embedding
     # all patient paragraphs can take a long time.
@@ -209,38 +274,61 @@ def encode_texts(
         cached = np.load(save_path)
 
         # Complete cache: return immediately without running BioClinicalBERT.
+=======
+    if save_path is not None and save_path.exists() and not force_restart:
+        cached = np.load(save_path)
+
+>>>>>>> ba4863a (update)
         if cached.shape[0] == len(texts):
             print(f"Loading complete cached embeddings from {save_path}")
             return cached
 
+<<<<<<< HEAD
         # Partial cache: continue encoding from the first unfinished row.
+=======
+>>>>>>> ba4863a (update)
         if cached.shape[0] < len(texts):
             embeddings = list(cached)
             start_idx = cached.shape[0]
             print(f"Resuming embeddings from {save_path}: {start_idx}/{len(texts)} completed")
         else:
+<<<<<<< HEAD
             # More cached rows than current data usually means the cleaned input
             # dataset changed. Reusing this cache would misalign rows.
+=======
+            # More cached rows than data — likely a dataset change, so row alignment is off.
+>>>>>>> ba4863a (update)
             raise ValueError(
                 f"Embedding cache has more rows than current data: {cached.shape[0]} vs {len(texts)}. "
                 "Delete the cache and rerun."
             )
 
+<<<<<<< HEAD
     # Load tokenizer and encoder model from Hugging Face.
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModel.from_pretrained(model_name)
 
     # Use GPU if available; otherwise fall back to CPU.
+=======
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModel.from_pretrained(model_name)
+
+>>>>>>> ba4863a (update)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Encoding device: {device}")
     if torch.cuda.is_available():
         print(f"GPU: {torch.cuda.get_device_name(0)}")
 
     model.to(device)
+<<<<<<< HEAD
     model.eval()  # evaluation mode disables dropout for deterministic embeddings
 
     # no_grad() avoids storing gradients because this script only extracts frozen
     # embeddings and does not fine-tune BioClinicalBERT.
+=======
+    model.eval()  # dropout off for deterministic output
+
+>>>>>>> ba4863a (update)
     with torch.no_grad():
         for batch_start in tqdm(
             range(start_idx, len(texts), batch_size),
@@ -248,8 +336,12 @@ def encode_texts(
         ):
             batch_texts = texts[batch_start : batch_start + batch_size]
 
+<<<<<<< HEAD
             # Tokenize the text batch. max_length=512 is the standard BERT limit;
             # longer patient paragraphs are truncated.
+=======
+            # max_length=512 is the BERT limit; longer paragraphs are truncated.
+>>>>>>> ba4863a (update)
             enc = tokenizer(
                 batch_texts,
                 return_tensors="pt",
@@ -259,6 +351,7 @@ def encode_texts(
             )
             enc = {k: v.to(device) for k, v in enc.items()}
 
+<<<<<<< HEAD
             # Forward pass through BioClinicalBERT. last_hidden_state has shape:
             # [batch_size, sequence_length, hidden_size].
             out = model(**enc)
@@ -270,15 +363,27 @@ def encode_texts(
                 batch_embeddings = last_hidden[:, 0, :]
             else:
                 # Mean embedding: average across non-padding tokens.
+=======
+            out = model(**enc)
+            last_hidden = out.last_hidden_state
+
+            if pooling == "cls":
+                batch_embeddings = last_hidden[:, 0, :]
+            else:
+>>>>>>> ba4863a (update)
                 batch_embeddings = mean_pool(last_hidden, enc["attention_mask"])
 
             embeddings.extend(batch_embeddings.cpu().numpy())
 
             completed = len(embeddings)
 
+<<<<<<< HEAD
             # Periodically save a temporary checkpoint, then atomically replace
             # the target cache file. This helps avoid corrupting the cache if the
             # process is interrupted during a save.
+=======
+            # Atomic checkpoint: write to .tmp then rename to avoid partial writes.
+>>>>>>> ba4863a (update)
             if save_path is not None and (completed % save_every == 0 or completed == len(texts)):
                 save_path.parent.mkdir(exist_ok=True)
                 temp_path = Path(str(save_path) + ".tmp")
@@ -290,6 +395,7 @@ def encode_texts(
     return np.vstack(embeddings)
 
 
+<<<<<<< HEAD
 # =============================================================================
 # Model training and evaluation
 # =============================================================================
@@ -319,6 +425,27 @@ def evaluate(X_tr, X_te, y_tr, y_te, n_bootstraps=N_BOOTSTRAPS):
     if len(thresholds):
         # sklearn returns one fewer threshold than precision/recall values, so
         # precision[:-1] and recall[:-1] are aligned with thresholds.
+=======
+# ---------------------------------------------------------------------------
+# Model training and evaluation
+# ---------------------------------------------------------------------------
+def evaluate(X_tr, X_te, y_tr, y_te, n_bootstraps=N_BOOTSTRAPS):
+    # Train one LightGBM classifier and evaluate it on the test set.
+    # Returns summary metrics, patient-level predictions, and the fitted model.
+
+    clf = LGBMClassifier(**LGBM_PARAMS)
+    clf.fit(X_tr, y_tr)
+
+    proba = clf.predict_proba(X_te)[:, 1]
+
+    auroc = float(roc_auc_score(y_te, proba))
+    auprc = float(average_precision_score(y_te, proba))
+
+    precision, recall, thresholds = precision_recall_curve(y_te, proba)
+
+    if len(thresholds):
+        # sklearn returns one fewer threshold than precision/recall values.
+>>>>>>> ba4863a (update)
         f1s = 2 * precision[:-1] * recall[:-1] / np.maximum(
             precision[:-1] + recall[:-1],
             1e-10,
@@ -326,6 +453,7 @@ def evaluate(X_tr, X_te, y_tr, y_te, n_bootstraps=N_BOOTSTRAPS):
         best = int(np.argmax(f1s))
         opt_thr = float(thresholds[best])
         f1 = float(f1s[best])
+<<<<<<< HEAD
 
         # Convert probabilities into binary predictions using the selected
         # antibiotic-specific threshold.
@@ -336,18 +464,30 @@ def evaluate(X_tr, X_te, y_tr, y_te, n_bootstraps=N_BOOTSTRAPS):
         mcc = float(matthews_corrcoef(y_te, pred))
     else:
         # Fallback for edge cases with no usable threshold.
+=======
+        pred = (proba >= opt_thr).astype(int)
+        mcc = float(matthews_corrcoef(y_te, pred))
+    else:
+>>>>>>> ba4863a (update)
         opt_thr = 0.5
         pred = (proba >= opt_thr).astype(int)
         f1 = 0.0
         mcc = 0.0
 
+<<<<<<< HEAD
     # Basic class balance information for the held-out test set.
+=======
+>>>>>>> ba4863a (update)
     n_pos = int(y_te.sum())
     n_neg = int(len(y_te) - n_pos)
     prev = float(n_pos / len(y_te))
 
+<<<<<<< HEAD
     # Bootstrap confidence intervals. Each bootstrap sample resamples test
     # patients with replacement and recomputes metrics.
+=======
+    # Bootstrap CIs via resampling test patients with replacement.
+>>>>>>> ba4863a (update)
     roc_boots, prc_boots, f1_boots = [], [], []
 
     y_te_arr = np.asarray(y_te)
@@ -356,15 +496,22 @@ def evaluate(X_tr, X_te, y_tr, y_te, n_bootstraps=N_BOOTSTRAPS):
         yt = y_te_arr[idx]
         yp = proba[idx]
 
+<<<<<<< HEAD
         # AUROC requires both positive and negative examples. Skip bootstrap
         # samples that accidentally contain only one class.
+=======
+        # AUROC is undefined if the bootstrap sample has only one class.
+>>>>>>> ba4863a (update)
         if len(np.unique(yt)) < 2:
             continue
 
         roc_boots.append(float(roc_auc_score(yt, yp)))
         prc_boots.append(float(average_precision_score(yt, yp)))
 
+<<<<<<< HEAD
         # Recompute the best possible F1 on the bootstrap sample.
+=======
+>>>>>>> ba4863a (update)
         pr_, rc_, th_ = precision_recall_curve(yt, yp)
         if len(th_):
             f1b = 2 * pr_[:-1] * rc_[:-1] / np.maximum(pr_[:-1] + rc_[:-1], 1e-10)
@@ -373,8 +520,12 @@ def evaluate(X_tr, X_te, y_tr, y_te, n_bootstraps=N_BOOTSTRAPS):
             f1_boots.append(0.0)
 
     def ci95(arr):
+<<<<<<< HEAD
         """Return bootstrap mean and percentile-based 95% confidence interval."""
 
+=======
+        # Percentile-based 95% CI from bootstrap samples.
+>>>>>>> ba4863a (update)
         if not arr:
             return None, None, None
         return (
@@ -387,8 +538,11 @@ def evaluate(X_tr, X_te, y_tr, y_te, n_bootstraps=N_BOOTSTRAPS):
     prc_mean, prc_lo, prc_hi = ci95(prc_boots)
     f1_mean, f1_lo, f1_hi = ci95(f1_boots)
 
+<<<<<<< HEAD
     # Store all summary metrics in one dictionary so they can be written to CSV
     # and JSON later.
+=======
+>>>>>>> ba4863a (update)
     metrics = {
         "auroc": auroc,
         "auroc_boot_mean": roc_mean,
@@ -410,8 +564,11 @@ def evaluate(X_tr, X_te, y_tr, y_te, n_bootstraps=N_BOOTSTRAPS):
         "prevalence": prev,
     }
 
+<<<<<<< HEAD
     # Patient-level outputs are kept separately from summary metrics so they can
     # be saved in a prediction table.
+=======
+>>>>>>> ba4863a (update)
     predictions = {
         "true": y_te_arr.astype(int),
         "proba": proba.astype(float),
@@ -421,6 +578,7 @@ def evaluate(X_tr, X_te, y_tr, y_te, n_bootstraps=N_BOOTSTRAPS):
     return metrics, predictions, clf
 
 
+<<<<<<< HEAD
 # =============================================================================
 # Main script
 # =============================================================================
@@ -443,18 +601,39 @@ def main():
     # row_id preserves the cleaned dataframe row order. This is essential because
     # embeddings are generated for the full dataframe first, then train/test rows
     # retrieve their corresponding embeddings by row_id.
+=======
+# ---------------------------------------------------------------------------
+# Main script
+# ---------------------------------------------------------------------------
+def main():
+    CACHE_DIR.mkdir(exist_ok=True)
+    OUTPUT_DIR.mkdir(exist_ok=True)
+
+    # --- Load and clean data ---
+    print(f"Reading: {DATA_PATH}")
+    df = pd.read_csv(DATA_PATH)
+
+    # Drop rows missing text or any antibiotic label so all classifiers share the same patient set.
+    df = df.dropna(subset=[TEXT_COL] + ANTIBIOTICS).reset_index(drop=True)
+
+    # row_id tracks position in the cleaned df; used to pull embeddings after splitting.
+>>>>>>> ba4863a (update)
     df["row_id"] = np.arange(len(df))
 
     print(f"Rows after dropping missing text/labels: {len(df)}")
 
+<<<<<<< HEAD
     # Some datasets may be missing one or more identifier columns. Rather than
     # failing, the script keeps whichever identifiers are available.
+=======
+>>>>>>> ba4863a (update)
     missing_ids = [col for col in ID_COLS if col not in df.columns]
     if missing_ids:
         print(f"Note: these ID columns were not found and will be skipped: {missing_ids}")
 
     available_id_cols = [col for col in ID_COLS if col in df.columns]
 
+<<<<<<< HEAD
     # -------------------------------------------------------------------------
     # Reproducible train / validation / test split
     # -------------------------------------------------------------------------
@@ -488,6 +667,25 @@ def main():
 
     # The embedding matrix is generated for all cleaned rows in dataframe order.
     # all_emb[i] corresponds to df row i.
+=======
+    # --- Train / val / test split ---
+    train_val, test = train_test_split(df, test_size=TEST_SIZE, random_state=RANDOM_STATE)
+
+    # Val set is kept for consistency but not used for hyperparameter tuning here.
+    train, val = train_test_split(train_val, test_size=VAL_SIZE, random_state=RANDOM_STATE)
+
+    train = train.reset_index(drop=True)
+    val   = val.reset_index(drop=True)
+    test  = test.reset_index(drop=True)
+
+    print(f"Train: {len(train)}  Val (unused): {len(val)}  Test: {len(test)}")
+
+    # --- Generate or load frozen BioClinicalBERT embeddings ---
+    if EMB_NPY.exists():
+        print(f"Found embedding cache: {EMB_NPY}")
+
+    # all_emb[i] corresponds to df row i (cleaned dataframe order).
+>>>>>>> ba4863a (update)
     all_emb = encode_texts(
         MODEL_NAME,
         df[TEXT_COL].tolist(),
@@ -497,14 +695,18 @@ def main():
         pooling=POOLING,
     )
 
+<<<<<<< HEAD
     # Safety check: prevents silent row misalignment if the cache came from a
     # different version of the dataset.
+=======
+>>>>>>> ba4863a (update)
     if all_emb.shape[0] != len(df):
         raise ValueError(
             f"Embedding/data row mismatch: embeddings={all_emb.shape[0]}, df={len(df)}. "
             "Delete cache and rerun."
         )
 
+<<<<<<< HEAD
     # Pull train/test embeddings using row_id so they match the rows selected by
     # train_test_split.
     X_train = all_emb[train["row_id"].to_numpy()]
@@ -521,11 +723,25 @@ def main():
 
     # Include true labels for each antibiotic before adding probabilities and
     # binary predictions.
+=======
+    X_train = all_emb[train["row_id"].to_numpy()]
+    X_test  = all_emb[test["row_id"].to_numpy()]
+
+    print(f"\nEmbedding shapes — Train: {X_train.shape}  Test: {X_test.shape}\n")
+
+    results = {}
+    models  = {}
+
+    pred_df = test[available_id_cols + ["row_id"]].copy()
+
+    # Ground-truth labels first, then probabilities/predictions below.
+>>>>>>> ba4863a (update)
     for ab in ANTIBIOTICS:
         pred_df[f"{ab}_true"] = test[ab].astype(int).to_numpy()
 
     metric_rows = []
 
+<<<<<<< HEAD
     # Console table header for quick progress monitoring.
     print(f"{'Antibiotic':<22}  {'AUROC':>6}  {'95% CI':>16}  {'AUPRC':>6}  {'F1':>6}  {'MCC':>6}  {'Prev':>5}")
     print("-" * 82)
@@ -535,11 +751,19 @@ def main():
     # -------------------------------------------------------------------------
     for ab in ANTIBIOTICS:
         # Binary labels for this antibiotic.
+=======
+    print(f"{'Antibiotic':<22}  {'AUROC':>6}  {'95% CI':>16}  {'AUPRC':>6}  {'F1':>6}  {'MCC':>6}  {'Prev':>5}")
+    print("-" * 82)
+
+    # --- Train and evaluate one model per antibiotic ---
+    for ab in ANTIBIOTICS:
+>>>>>>> ba4863a (update)
         y_tr = train[ab].astype(int).reset_index(drop=True)
         y_te = test[ab].astype(int).reset_index(drop=True)
 
         metrics, predictions, clf = evaluate(X_train, X_test, y_tr, y_te)
 
+<<<<<<< HEAD
         # JSON-friendly result structure.
         results[ab] = {
             "metrics": metrics,
@@ -563,6 +787,25 @@ def main():
         metric_rows.append({"antibiotic": ab, **metrics})
 
         # Print compact performance summary for this antibiotic.
+=======
+        results[ab] = {
+            "metrics": metrics,
+            "predictions": {
+                "true":  predictions["true"].tolist(),
+                "proba": predictions["proba"].tolist(),
+                "pred":  predictions["pred"].tolist(),
+            },
+        }
+
+        models[ab] = clf
+
+        pred_df[f"{ab}_proba"]     = predictions["proba"]
+        pred_df[f"{ab}_pred"]      = predictions["pred"]
+        pred_df[f"{ab}_threshold"] = metrics["optimal_threshold"]
+
+        metric_rows.append({"antibiotic": ab, **metrics})
+
+>>>>>>> ba4863a (update)
         ci_str = (
             f"[{metrics['auroc_ci_lower']:.3f}, {metrics['auroc_ci_upper']:.3f}]"
             if metrics["auroc_ci_lower"] is not None
@@ -576,6 +819,7 @@ def main():
 
     metrics_df = pd.DataFrame(metric_rows)
 
+<<<<<<< HEAD
     # -------------------------------------------------------------------------
     # Save outputs
     # -------------------------------------------------------------------------
@@ -593,6 +837,20 @@ def main():
         json.dump(results, f, indent=2)
 
     # Trained LightGBM classifiers for possible reuse without retraining.
+=======
+    # --- Save outputs ---
+    metrics_path = OUTPUT_DIR / "frozen_validation_metrics_comprehensive.csv"
+    pred_path    = OUTPUT_DIR / "frozen_validation_patient_predictions.csv"
+    json_path    = OUTPUT_DIR / "frozen_validation_results_with_predictions.json"
+    models_path  = OUTPUT_DIR / "frozen_validation_lightgbm_models.pkl"
+
+    metrics_df.to_csv(metrics_path, index=False)
+    pred_df.to_csv(pred_path, index=False)
+
+    with open(json_path, "w") as f:
+        json.dump(results, f, indent=2)
+
+>>>>>>> ba4863a (update)
     with open(models_path, "wb") as f:
         pickle.dump(models, f)
 

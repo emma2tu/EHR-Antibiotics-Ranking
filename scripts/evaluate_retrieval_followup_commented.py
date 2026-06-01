@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 """
 evaluate_retrieval_followup.py
 
@@ -18,6 +19,17 @@ Outputs:
 Run from repo root:
     python evaluate_retrieval_followup.py
 """
+=======
+# Evaluates follow-up similar-patient retrieval with classification.
+#
+# Input:  followup_outputs/combined_retrieval_classifier_summary_top10.csv
+# Output: followup_outputs/evaluation/
+#           retrieval_vs_classifier_by_antibiotic.csv
+#           ranking_hit_rates.csv
+#           rank_position_true_label_analysis.csv
+#           neighborhood_similarity_analysis.csv
+#           combined_score_weight_sweep.csv
+>>>>>>> ba4863a (update)
 
 from __future__ import annotations
 
@@ -36,6 +48,7 @@ from sklearn.metrics import (
 )
 
 
+<<<<<<< HEAD
 # ── Paths ─────────────────────────────────────────────────────────────────────
 # Resolve all paths relative to the location of this script so it can be run from the repo.
 BASE = Path(__file__).parent
@@ -43,11 +56,24 @@ FOLLOWUP_DIR = BASE / "followup_outputs"
 # INPUT_CSV = FOLLOWUP_DIR / "combined_retrieval_classifier_summary_top10.csv"
 # EVAL_DIR = FOLLOWUP_DIR / "evaluation"
 # This evaluation reads the retrieval/classifier summary produced by the mean-embedding retrieval run.
+=======
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+BASE = Path(__file__).parent
+FOLLOWUP_DIR = BASE / "followup_outputs"
+>>>>>>> ba4863a (update)
 INPUT_CSV = FOLLOWUP_DIR / "mean_embeddings_top10/combined_retrieval_classifier_summary_top10.csv"
 EVAL_DIR = FOLLOWUP_DIR / "evaluation_mean"
 
 
+<<<<<<< HEAD
 # ── Settings ──────────────────────────────────────────────────────────────────
+=======
+# ---------------------------------------------------------------------------
+# Settings
+# ---------------------------------------------------------------------------
+>>>>>>> ba4863a (update)
 ANTIBIOTICS = [
     "CLINDAMYCIN",
     "ERYTHROMYCIN",
@@ -59,6 +85,7 @@ ANTIBIOTICS = [
     "VANCOMYCIN",
 ]
 
+<<<<<<< HEAD
 # Combined score:
 # combined = weight * classifier_proba + (1 - weight) * retrieval_fraction
 # 0.0 means retrieval-only; 1.0 means classifier-only; intermediate values mix both signals.
@@ -69,6 +96,18 @@ COMBINED_WEIGHTS = [0.0, 0.25, 0.5, 0.75, 1.0]
 def safe_metric(metric_func, y_true, y_score_or_pred, default=np.nan, **kwargs):
     """Compute metric safely when labels may be single-class."""
     # Some metrics, especially AUROC, fail if the labels contain only one class.
+=======
+# combined = w * classifier_proba + (1 - w) * retrieval_fraction
+# 0.0 = retrieval-only, 1.0 = classifier-only
+COMBINED_WEIGHTS = [0.0, 0.25, 0.5, 0.75, 1.0]
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+def safe_metric(metric_func, y_true, y_score_or_pred, default=np.nan, **kwargs):
+    # AUROC and similar metrics raise if labels are single-class; return default in that case.
+>>>>>>> ba4863a (update)
     try:
         return float(metric_func(y_true, y_score_or_pred, **kwargs))
     except Exception:
@@ -76,8 +115,12 @@ def safe_metric(metric_func, y_true, y_score_or_pred, default=np.nan, **kwargs):
 
 
 def get_antibiotic_cols(ab: str):
+<<<<<<< HEAD
     """Return expected columns for one antibiotic."""
     # Column names follow the convention created by the retrieval follow-up script.
+=======
+    # Column names follow the convention set by the retrieval follow-up script.
+>>>>>>> ba4863a (update)
     return {
         "true": f"{ab}_true",
         "retrieval_fraction": f"{ab}_retrieval_fraction",
@@ -89,20 +132,32 @@ def get_antibiotic_cols(ab: str):
 
 
 def parse_ranking(ranking_str: str) -> list[str]:
+<<<<<<< HEAD
     """Parse ranking string formatted as 'A > B > C'."""
     # Missing rankings are treated as empty so downstream metrics can fail gracefully.
+=======
+    # Parses 'A > B > C' format; missing values return [] so callers can fail gracefully.
+>>>>>>> ba4863a (update)
     if pd.isna(ranking_str):
         return []
     return [x.strip() for x in str(ranking_str).split(">")]
 
 
+<<<<<<< HEAD
 # Convenience helper for pulling only the first k recommendations from a ranking string.
+=======
+>>>>>>> ba4863a (update)
 def get_top_k_from_ranking(ranking_str: str, k: int) -> list[str]:
     return parse_ranking(ranking_str)[:k]
 
 
+<<<<<<< HEAD
 # Collect the binary true labels for all antibiotics that are available in this row.
 def row_true_labels(row: pd.Series, antibiotics: list[str]) -> dict[str, int]:
+=======
+def row_true_labels(row: pd.Series, antibiotics: list[str]) -> dict[str, int]:
+    # Returns only antibiotics that have a non-null true label in this row.
+>>>>>>> ba4863a (update)
     return {
         ab: int(row[f"{ab}_true"])
         for ab in antibiotics
@@ -111,22 +166,31 @@ def row_true_labels(row: pd.Series, antibiotics: list[str]) -> dict[str, int]:
 
 
 def rank_by_score(row: pd.Series, antibiotics: list[str], score_suffix: str) -> list[str]:
+<<<<<<< HEAD
     """
     Rank antibiotics descending by a column suffix.
     Example suffix: '_classifier_proba', '_retrieval_fraction', '_combined_0.50'
     """
     scored = []
     # Build a list of antibiotics with valid scores, then sort from highest to lowest.
+=======
+    # Ranks antibiotics descending by the given column suffix, e.g. '_classifier_proba'.
+    scored = []
+>>>>>>> ba4863a (update)
     for ab in antibiotics:
         col = f"{ab}{score_suffix}"
         if col in row.index and not pd.isna(row[col]):
             scored.append((ab, float(row[col])))
+<<<<<<< HEAD
 
+=======
+>>>>>>> ba4863a (update)
     scored = sorted(scored, key=lambda x: x[1], reverse=True)
     return [ab for ab, _ in scored]
 
 
 def top_k_hit(row: pd.Series, ranking: list[str], k: int, antibiotics: list[str]) -> bool:
+<<<<<<< HEAD
     """
     True if at least one of the top-k ranked antibiotics has true label = 1.
     """
@@ -139,6 +203,15 @@ def top_k_hit(row: pd.Series, ranking: list[str], k: int, antibiotics: list[str]
 def top1_true(row: pd.Series, ranking: list[str]) -> float:
     """Return true label of the top-ranked antibiotic."""
     # No ranking means the top-1 label is undefined.
+=======
+    # True if at least one top-k antibiotic is truly effective for this patient.
+    labels = row_true_labels(row, antibiotics)
+    return any(labels.get(ab, 0) == 1 for ab in ranking[:k])
+
+
+def top1_true(row: pd.Series, ranking: list[str]) -> float:
+    # True label of the top-ranked antibiotic; nan if ranking is empty or label is missing.
+>>>>>>> ba4863a (update)
     if not ranking:
         return np.nan
     ab = ranking[0]
@@ -149,24 +222,35 @@ def top1_true(row: pd.Series, ranking: list[str]) -> float:
 
 
 def average_precision_at_k(row: pd.Series, ranking: list[str], k: int, antibiotics: list[str]) -> float:
+<<<<<<< HEAD
     """
     AP@k for a multi-label row:
     Rewards rankings that place true-effective antibiotics near the top.
     """
     labels = row_true_labels(row, antibiotics)
     # If the row has no usable ground-truth labels, AP@k cannot be calculated.
+=======
+    # AP@k rewards rankings that place truly effective antibiotics closer to the top.
+    labels = row_true_labels(row, antibiotics)
+>>>>>>> ba4863a (update)
     if not labels:
         return np.nan
 
     total_relevant = sum(labels.values())
+<<<<<<< HEAD
     # AP@k is undefined when no antibiotic is truly effective for that patient.
+=======
+>>>>>>> ba4863a (update)
     if total_relevant == 0:
         return np.nan
 
     hits = 0
     precisions = []
+<<<<<<< HEAD
 
     # Track precision each time the ranking retrieves a truly effective antibiotic.
+=======
+>>>>>>> ba4863a (update)
     for rank_idx, ab in enumerate(ranking[:k], start=1):
         if labels.get(ab, 0) == 1:
             hits += 1
@@ -174,23 +258,34 @@ def average_precision_at_k(row: pd.Series, ranking: list[str], k: int, antibioti
 
     if not precisions:
         return 0.0
+<<<<<<< HEAD
 
+=======
+>>>>>>> ba4863a (update)
     return float(sum(precisions) / min(total_relevant, k))
 
 
 def ndcg_at_k(row: pd.Series, ranking: list[str], k: int, antibiotics: list[str]) -> float:
+<<<<<<< HEAD
     """
     NDCG@k for binary relevance across antibiotics.
     """
     labels = row_true_labels(row, antibiotics)
     # If no true labels are available, the ranking cannot be scored.
+=======
+    # NDCG@k with binary relevance; nan if no true labels are available.
+    labels = row_true_labels(row, antibiotics)
+>>>>>>> ba4863a (update)
     if not labels:
         return np.nan
 
     def dcg(rels):
         return sum(rel / np.log2(i + 2) for i, rel in enumerate(rels))
 
+<<<<<<< HEAD
     # DCG scores the proposed ranking; IDCG is the best possible ranking for this patient.
+=======
+>>>>>>> ba4863a (update)
     rels = [labels.get(ab, 0) for ab in ranking[:k]]
     dcg_val = dcg(rels)
 
@@ -199,11 +294,15 @@ def ndcg_at_k(row: pd.Series, ranking: list[str], k: int, antibiotics: list[str]
 
     if idcg_val == 0:
         return np.nan
+<<<<<<< HEAD
 
+=======
+>>>>>>> ba4863a (update)
     return float(dcg_val / idcg_val)
 
 
 def mean_neighbor_similarity(row: pd.Series) -> float:
+<<<<<<< HEAD
     """
     Parse neighbor_similarities JSON string and return mean.
     """
@@ -211,6 +310,11 @@ def mean_neighbor_similarity(row: pd.Series) -> float:
         return np.nan
 
     # The retrieval script stores similarities as a JSON string inside the CSV.
+=======
+    # Parses the neighbor_similarities JSON string stored in the CSV and returns the mean.
+    if "neighbor_similarities" not in row.index or pd.isna(row["neighbor_similarities"]):
+        return np.nan
+>>>>>>> ba4863a (update)
     try:
         sims = json.loads(row["neighbor_similarities"])
         if not sims:
@@ -220,6 +324,7 @@ def mean_neighbor_similarity(row: pd.Series) -> float:
         return np.nan
 
 
+<<<<<<< HEAD
 # ── Evaluation 1: Per-antibiotic score metrics ────────────────────────────────
 def evaluate_by_antibiotic(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -234,6 +339,16 @@ def evaluate_by_antibiotic(df: pd.DataFrame) -> pd.DataFrame:
     rows = []
 
     # Evaluate each antibiotic independently as a binary prediction task.
+=======
+# ---------------------------------------------------------------------------
+# Evaluation 1: Per-antibiotic score metrics
+# ---------------------------------------------------------------------------
+def evaluate_by_antibiotic(df: pd.DataFrame) -> pd.DataFrame:
+    # Compares retrieval fraction, weighted score, classifier proba, and combined scores
+    # as binary predictors for each antibiotic's true label.
+    rows = []
+
+>>>>>>> ba4863a (update)
     for ab in ANTIBIOTICS:
         cols = get_antibiotic_cols(ab)
 
@@ -245,7 +360,10 @@ def evaluate_by_antibiotic(df: pd.DataFrame) -> pd.DataFrame:
 
         y_true = df[cols["true"]].astype(int).to_numpy()
 
+<<<<<<< HEAD
         # Each method supplies a continuous score that can be evaluated with AUROC/AUPRC.
+=======
+>>>>>>> ba4863a (update)
         score_columns = {
             "retrieval_fraction": cols["retrieval_fraction"],
             "retrieval_weighted_score": cols["retrieval_weighted_score"],
@@ -254,7 +372,11 @@ def evaluate_by_antibiotic(df: pd.DataFrame) -> pd.DataFrame:
         if cols["classifier_proba"] in df.columns:
             score_columns["classifier_proba"] = cols["classifier_proba"]
 
+<<<<<<< HEAD
             # Create combined score columns in-memory, without writing them until output tables are saved.
+=======
+            # Combined score columns are created in-memory here; not written to the input df.
+>>>>>>> ba4863a (update)
             for w in COMBINED_WEIGHTS:
                 method_name = f"combined_w_classifier_{w:.2f}"
                 score_columns[method_name] = method_name
@@ -269,8 +391,12 @@ def evaluate_by_antibiotic(df: pd.DataFrame) -> pd.DataFrame:
 
             y_score = df[score_col].astype(float).to_numpy()
 
+<<<<<<< HEAD
             # Thresholded prediction for retrieval scores using 0.5.
             # For classifier, use saved pred if available; otherwise also threshold at 0.5.
+=======
+            # Use saved classifier predictions if available; otherwise threshold at 0.5.
+>>>>>>> ba4863a (update)
             if method == "classifier_proba" and cols["classifier_pred"] in df.columns:
                 y_pred = df[cols["classifier_pred"]].astype(int).to_numpy()
             else:
@@ -292,6 +418,7 @@ def evaluate_by_antibiotic(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+<<<<<<< HEAD
 # ── Evaluation 2: Ranking hit rates ───────────────────────────────────────────
 def evaluate_ranking_hit_rates(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -307,13 +434,28 @@ def evaluate_ranking_hit_rates(df: pd.DataFrame) -> pd.DataFrame:
     methods = []
 
     # Use any precomputed ranking columns that exist in the summary CSV.
+=======
+# ---------------------------------------------------------------------------
+# Evaluation 2: Ranking hit rates
+# ---------------------------------------------------------------------------
+def evaluate_ranking_hit_rates(df: pd.DataFrame) -> pd.DataFrame:
+    # For each method, checks whether truly effective antibiotics appear near the top
+    # of the ranking (top-1, top-3, AP@k, NDCG@k).
+    rows = []
+    methods = []
+
+>>>>>>> ba4863a (update)
     if "retrieval_ranking" in df.columns:
         methods.append(("retrieval", "retrieval_ranking", None))
 
     if "classifier_ranking" in df.columns:
         methods.append(("classifier", "classifier_ranking", None))
 
+<<<<<<< HEAD
     # Add combined ranking methods based on score columns created here.
+=======
+    # Build combined ranking methods from score columns generated here.
+>>>>>>> ba4863a (update)
     if all(f"{ab}_classifier_proba" in df.columns for ab in ANTIBIOTICS):
         for w in COMBINED_WEIGHTS:
             suffix = f"_combined_score_w{w:.2f}"
@@ -324,6 +466,7 @@ def evaluate_ranking_hit_rates(df: pd.DataFrame) -> pd.DataFrame:
                 )
             methods.append((f"combined_w_classifier_{w:.2f}", None, suffix))
 
+<<<<<<< HEAD
     # For each ranking method, summarize whether true-effective antibiotics appear near the top.
     for method_name, ranking_col, score_suffix in methods:
         top1_values = []
@@ -336,6 +479,15 @@ def evaluate_ranking_hit_rates(df: pd.DataFrame) -> pd.DataFrame:
 
         for _, row in df.iterrows():
             # Rankings either come directly from the CSV or are reconstructed from score columns.
+=======
+    for method_name, ranking_col, score_suffix in methods:
+        top1_values, top3_hits, top5_hits = [], [], []
+        ap3_values, ap5_values = [], []
+        ndcg3_values, ndcg5_values = [], []
+
+        for _, row in df.iterrows():
+            # Rankings come from the CSV directly or are reconstructed from score columns.
+>>>>>>> ba4863a (update)
             if ranking_col is not None:
                 ranking = parse_ranking(row[ranking_col])
             else:
@@ -364,12 +516,20 @@ def evaluate_ranking_hit_rates(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+<<<<<<< HEAD
 # ── Evaluation 3: True-label rate by rank position ────────────────────────────
 def evaluate_rank_positions(df: pd.DataFrame) -> pd.DataFrame:
     """
     For each method, ask:
       Are antibiotics ranked #1 more often truly effective than #8?
     """
+=======
+# ---------------------------------------------------------------------------
+# Evaluation 3: True-label rate by rank position
+# ---------------------------------------------------------------------------
+def evaluate_rank_positions(df: pd.DataFrame) -> pd.DataFrame:
+    # Checks whether rank-1 antibiotics are more often truly effective than rank-8.
+>>>>>>> ba4863a (update)
     rows = []
     ranking_specs = []
 
@@ -379,13 +539,19 @@ def evaluate_rank_positions(df: pd.DataFrame) -> pd.DataFrame:
     if "classifier_ranking" in df.columns:
         ranking_specs.append(("classifier", "classifier_ranking", None))
 
+<<<<<<< HEAD
     # Accumulate true-label rates separately for rank 1, rank 2, ..., rank 8.
+=======
+>>>>>>> ba4863a (update)
     for method_name, ranking_col, _ in ranking_specs:
         rank_to_values = {rank: [] for rank in range(1, len(ANTIBIOTICS) + 1)}
 
         for _, row in df.iterrows():
             ranking = parse_ranking(row[ranking_col])
+<<<<<<< HEAD
 
+=======
+>>>>>>> ba4863a (update)
             for rank, ab in enumerate(ranking, start=1):
                 true_col = f"{ab}_true"
                 if true_col in row.index and not pd.isna(row[true_col]):
@@ -402,26 +568,40 @@ def evaluate_rank_positions(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+<<<<<<< HEAD
 # ── Evaluation 4: Neighborhood quality ────────────────────────────────────────
 def evaluate_neighborhood_similarity(df: pd.DataFrame) -> pd.DataFrame:
     """
     Does retrieval work better when the nearest neighbors are more similar?
     """
     # Work on a copy because this function adds derived columns for analysis.
+=======
+# ---------------------------------------------------------------------------
+# Evaluation 4: Neighborhood quality
+# ---------------------------------------------------------------------------
+def evaluate_neighborhood_similarity(df: pd.DataFrame) -> pd.DataFrame:
+    # Checks whether retrieval accuracy improves when the nearest neighbors are more similar.
+>>>>>>> ba4863a (update)
     work = df.copy()
     work["mean_neighbor_similarity"] = work.apply(mean_neighbor_similarity, axis=1)
 
     if work["mean_neighbor_similarity"].isna().all():
         return pd.DataFrame()
 
+<<<<<<< HEAD
     # Retrieval top-1 correctness.
+=======
+>>>>>>> ba4863a (update)
     work["retrieval_top1_true"] = work.apply(
         lambda row: top1_true(row, parse_ranking(row["retrieval_ranking"]))
         if "retrieval_ranking" in row.index else np.nan,
         axis=1,
     )
 
+<<<<<<< HEAD
     # Split into quartiles of neighborhood similarity.
+=======
+>>>>>>> ba4863a (update)
     work = work.dropna(subset=["mean_neighbor_similarity", "retrieval_top1_true"]).copy()
 
     if len(work) < 4:
@@ -435,8 +615,11 @@ def evaluate_neighborhood_similarity(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     rows = []
+<<<<<<< HEAD
 
     # Compare retrieval performance across low- and high-similarity neighborhoods.
+=======
+>>>>>>> ba4863a (update)
     for quartile, group in work.groupby("similarity_quartile", observed=True):
         rows.append({
             "similarity_quartile": str(quartile),
@@ -448,6 +631,7 @@ def evaluate_neighborhood_similarity(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+<<<<<<< HEAD
 # ── Evaluation 5: Weight sweep summary ────────────────────────────────────────
 def evaluate_combined_weight_sweep(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -457,18 +641,36 @@ def evaluate_combined_weight_sweep(df: pd.DataFrame) -> pd.DataFrame:
     rows = []
 
     # Sweep across different mixtures of classifier probability and retrieval fraction.
+=======
+# ---------------------------------------------------------------------------
+# Evaluation 5: Combined score weight sweep
+# ---------------------------------------------------------------------------
+def evaluate_combined_weight_sweep(df: pd.DataFrame) -> pd.DataFrame:
+    # Summarizes AUROC/AUPRC averaged across antibiotics for each classifier/retrieval weight.
+    rows = []
+
+>>>>>>> ba4863a (update)
     for w in COMBINED_WEIGHTS:
         per_ab = []
 
         for ab in ANTIBIOTICS:
             true_col = f"{ab}_true"
+<<<<<<< HEAD
             clf_col = f"{ab}_classifier_proba"
             ret_col = f"{ab}_retrieval_fraction"
+=======
+            clf_col  = f"{ab}_classifier_proba"
+            ret_col  = f"{ab}_retrieval_fraction"
+>>>>>>> ba4863a (update)
 
             if not all(c in df.columns for c in [true_col, clf_col, ret_col]):
                 continue
 
+<<<<<<< HEAD
             y_true = df[true_col].astype(int).to_numpy()
+=======
+            y_true  = df[true_col].astype(int).to_numpy()
+>>>>>>> ba4863a (update)
             y_score = (
                 w * df[clf_col].astype(float).to_numpy()
                 + (1 - w) * df[ret_col].astype(float).to_numpy()
@@ -485,7 +687,10 @@ def evaluate_combined_weight_sweep(df: pd.DataFrame) -> pd.DataFrame:
 
         per_ab_df = pd.DataFrame(per_ab)
 
+<<<<<<< HEAD
         # Average across antibiotics to summarize each weight setting with one row.
+=======
+>>>>>>> ba4863a (update)
         rows.append({
             "classifier_weight": w,
             "retrieval_weight": 1 - w,
@@ -499,8 +704,15 @@ def evaluate_combined_weight_sweep(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+<<<<<<< HEAD
 def main():
     # Create the evaluation output folder before writing any CSV files.
+=======
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+def main():
+>>>>>>> ba4863a (update)
     EVAL_DIR.mkdir(parents=True, exist_ok=True)
 
     if not INPUT_CSV.exists():
@@ -513,6 +725,7 @@ def main():
     df = pd.read_csv(INPUT_CSV)
     print(f"Rows: {len(df)}  Columns: {len(df.columns)}")
 
+<<<<<<< HEAD
     # Run each evaluation on a copy so helper functions can add temporary columns safely.
     by_ab = evaluate_by_antibiotic(df.copy())
     hit_rates = evaluate_ranking_hit_rates(df.copy())
@@ -527,6 +740,21 @@ def main():
     weight_sweep_path = EVAL_DIR / "combined_score_weight_sweep.csv"
 
     # Save each analysis as a separate CSV for easier inspection and report generation.
+=======
+    # Each evaluation gets its own copy so helper functions can add temp columns freely.
+    by_ab         = evaluate_by_antibiotic(df.copy())
+    hit_rates     = evaluate_ranking_hit_rates(df.copy())
+    rank_positions = evaluate_rank_positions(df.copy())
+    neighborhood  = evaluate_neighborhood_similarity(df.copy())
+    weight_sweep  = evaluate_combined_weight_sweep(df.copy())
+
+    by_ab_path         = EVAL_DIR / "retrieval_vs_classifier_by_antibiotic.csv"
+    hit_rates_path     = EVAL_DIR / "ranking_hit_rates.csv"
+    rank_positions_path = EVAL_DIR / "rank_position_true_label_analysis.csv"
+    neighborhood_path  = EVAL_DIR / "neighborhood_similarity_analysis.csv"
+    weight_sweep_path  = EVAL_DIR / "combined_score_weight_sweep.csv"
+
+>>>>>>> ba4863a (update)
     by_ab.to_csv(by_ab_path, index=False)
     hit_rates.to_csv(hit_rates_path, index=False)
     rank_positions.to_csv(rank_positions_path, index=False)

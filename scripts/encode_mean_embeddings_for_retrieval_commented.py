@@ -7,7 +7,10 @@
 # to create a mean-pooled embedding.
 
 from __future__ import annotations
+<<<<<<< HEAD
 
+=======
+>>>>>>> ba4863a (update)
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -15,14 +18,22 @@ import torch
 from tqdm.auto import tqdm
 from transformers import AutoModel, AutoTokenizer
 
+<<<<<<< HEAD
 # Project paths are defined relative to this script so the script can be run
 # from the repository without hard-coding absolute file locations.
+=======
+# Directories and file paths
+>>>>>>> ba4863a (update)
 BASE = Path(__file__).parent
 DATA_PATH = BASE / "data" / "antibiotics_labels.csv"
 CACHE_DIR = BASE / "cache"
 SAVE_PATH = CACHE_DIR / "patient_paragraph_bioclinicalbert_mean_embeddings.npy"
 
+<<<<<<< HEAD
 # Hugging Face model used to encode each patient paragraph.
+=======
+# Hugging Face BioClinicalBERT model used to encode each patient paragraph.
+>>>>>>> ba4863a (update)
 MODEL_NAME = "emilyalsentzer/Bio_ClinicalBERT"
 
 # Input text column and label columns required for the retrieval dataset.
@@ -54,13 +65,17 @@ def mean_pool(last_hidden_state: torch.Tensor, attention_mask: torch.Tensor) -> 
     return summed / denom
 
 def encode_mean_embeddings(texts: list[str], save_path: Path) -> np.ndarray:
+<<<<<<< HEAD
     # Ensure the cache folder exists before saving checkpoints.
     CACHE_DIR.mkdir(exist_ok=True)
+=======
+>>>>>>> ba4863a (update)
 
     # embeddings stores completed batches. start_idx allows interrupted runs to
     # resume from the last saved checkpoint instead of restarting from scratch.
     embeddings = []
     start_idx = 0
+<<<<<<< HEAD
 
     # Reuse the saved .npy file when possible. This is important because encoding
     # all patient paragraphs can take a long time.
@@ -79,10 +94,14 @@ def encode_mean_embeddings(texts: list[str], save_path: Path) -> np.ndarray:
             # current filtered dataset, so continuing would misalign rows.
             raise ValueError(f"Cache has more rows than current data: {cached.shape[0]} vs {len(texts)}")
 
+=======
+ 
+>>>>>>> ba4863a (update)
     # Load the tokenizer and frozen BioClinicalBERT model.
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     model = AutoModel.from_pretrained(MODEL_NAME)
 
+<<<<<<< HEAD
     # Use GPU acceleration when available; otherwise, fall back to CPU.
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Encoding device: {device}")
@@ -91,6 +110,9 @@ def encode_mean_embeddings(texts: list[str], save_path: Path) -> np.ndarray:
 
     # Move model to the selected device and set evaluation mode because this
     # script only performs inference, not fine-tuning.
+=======
+    # Move model to the selected device and set evaluation mode because this is inference only, not training. 
+>>>>>>> ba4863a (update)
     model.to(device)
     model.eval()
 
@@ -129,11 +151,17 @@ def encode_mean_embeddings(texts: list[str], save_path: Path) -> np.ndarray:
 
 def main():
     # Load the labeled antibiotic dataset.
+<<<<<<< HEAD
     print(f"Reading: {DATA_PATH}")
     df = pd.read_csv(DATA_PATH)
 
     # Keep only complete rows so every saved embedding corresponds to a patient
     # with text and all eight antibiotic labels.
+=======
+    df = pd.read_csv(DATA_PATH)
+
+    # Keep only complete rows so every saved embedding corresponds to a patient with text and all eight antibiotic labels.
+>>>>>>> ba4863a (update)
     df = df.dropna(subset=[TEXT_COL] + ANTIBIOTICS).reset_index(drop=True)
     print("Rows after dropping missing text/labels:", len(df))
 
@@ -143,7 +171,11 @@ def main():
     # Final safety check: one embedding row should match one filtered data row.
     if embeddings.shape[0] != len(df):
         raise ValueError(f"Embedding/data mismatch: {embeddings.shape[0]} vs {len(df)}")
+<<<<<<< HEAD
     print("Done.")
+=======
+
+>>>>>>> ba4863a (update)
     print(f"Saved: {SAVE_PATH}")
 
 if __name__ == "__main__":

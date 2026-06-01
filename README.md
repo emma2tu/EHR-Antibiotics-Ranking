@@ -155,6 +155,7 @@ This public repository is organized to include code, aggregate summary results, 
 │       └── run_mean_embeddings_gpu.sh
 ├── figures/
 └── paper/
+<<<<<<< HEAD
 ```
 
 ---
@@ -323,3 +324,6 @@ If using or extending this work, please cite the original benchmark or dataset s
 ## Disclaimer
 
 This repository is for research and educational purposes only. It is not intended for clinical deployment or medical decision-making.
+=======
+```
+>>>>>>> ba4863a (update)
